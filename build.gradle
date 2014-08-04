@@ -1,0 +1,82 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+    }
+}
+
+import groovy.json.*
+
+configurations {
+    compile
+    deployJars
+}
+
+apply plugin: "forge"
+apply plugin: "maven"
+
+group = "net.dries007.tapemouse"
+version = "1.0.0"
+
+targetCompatibility = 1.7
+sourceCompatibility = 1.7
+
+archivesBaseName = 'TapeMouse'
+minecraft {
+    version = "1.7.10-10.13.0.1190"
+    runDir = "jars"
+}
+
+if (System.getenv().BUILD_NUMBER != null) version += "." + System.getenv().BUILD_NUMBER
+def builder = new groovy.json.JsonBuilder()
+builder (version: version, mcversion: project.minecraft.version, apiversion: project.minecraft.apiVersion)
+new File("versions.json").write(builder.toPrettyString())
+
+processResources {
+    from(sourceSets.main.resources.srcDirs) {
+        include '**/*.info'
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude '**/*.info'
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from "LICENSE.txt"
+    from sourceSets.main.allSource
+    classifier = 'src'
+    appendix = project.minecraft.version
+}
+
+task deobfJar(type: Jar) {
+    from "LICENSE.txt"
+    from sourceSets.main.output
+    from (sourceSets.main.allSource.srcDirs) {
+        include '**/*.java'
+    }
+	classifier = 'dev'
+    appendix = project.minecraft.version
+}
+
+jar {
+    from "LICENSE.txt"
+    appendix = project.minecraft.version
+}
+
+artifacts {
+	archives jar
+    archives sourcesJar
+    archives deobfJar
+}
