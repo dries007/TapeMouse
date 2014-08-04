@@ -6,6 +6,12 @@ Tape + Mouse = TapeMouse
 Don't use this on a server that doesn't allow AFK farming.
 It is detectable, and I'm not planning on making it undetectable.
 
+How to use
+----------
+
+Use /tapemouse <off|left|right> [delay]
+
+
 Download
 --------
 
