@@ -12,10 +12,7 @@ import net.minecraftforge.client.ClientCommandHandler;
 /**
  * Main mod file
  *
- * Thanks for the idea Tinkers Construct
- *
  * @author Dries007
- * @author DoubleDoorDevelopment
  */
 @Mod(modid = TapeMouse.MODID, name = TapeMouse.MODID)
 public class TapeMouse
