@@ -6,5 +6,4 @@ out
 *.ipr
 *.iws
 .idea
-*.txt
 *.json
