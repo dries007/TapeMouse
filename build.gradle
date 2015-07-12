@@ -58,6 +58,9 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
     classifier = 'src'
     appendix = project.minecraft.version
+    manifest {
+        attributes 'ModSide': 'CLIENT'
+    }
 }
 
 task deobfJar(type: Jar) {
@@ -68,11 +71,17 @@ task deobfJar(type: Jar) {
     }
 	classifier = 'dev'
     appendix = project.minecraft.version
+    manifest {
+        attributes 'ModSide': 'CLIENT'
+    }
 }
 
 jar {
     from "LICENSE.txt"
     appendix = project.minecraft.version
+    manifest {
+        attributes 'ModSide': 'CLIENT'
+    }
 }
 
 artifacts {
