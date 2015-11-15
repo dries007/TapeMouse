@@ -59,7 +59,7 @@ public class CommandTapeMouse extends CommandBase
                 break;
         }
 
-        if (args.length > 1) TapeMouse.delay = parseIntWithMin(sender, args[1], 1);
+        if (args.length > 1) TapeMouse.delay = parseIntWithMin(sender, args[1], 0);
     }
 
     @Override
