@@ -26,14 +26,14 @@ apply plugin: "forge"
 apply plugin: "maven"
 
 group = "net.dries007.tapemouse"
-version = "1.0.1"
+version = "1.1.0"
 
 targetCompatibility = 1.7
 sourceCompatibility = 1.7
 
 archivesBaseName = 'TapeMouse'
 minecraft {
-    version = "1.7.10-10.13.0.1190"
+    version = "1.7.10-10.13.4.1614-1.7.10"
     runDir = "jars"
 }
 

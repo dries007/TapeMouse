@@ -29,16 +29,14 @@ public class CommandTapeMouse extends CommandBase
     @Override
     public String getCommandUsage(ICommandSender sender)
     {
-        return "/tapemouse <left|right|off>";
+        return "/tapemouse <left|right|off> [delay]";
     }
 
     @Override
     public void processCommand(ICommandSender sender, String[] args)
     {
-        if (args.length == 0)
-        {
-            throw new WrongUsageException("/tapemouse <left|right|off>");
-        }
+        if (args.length == 0) throw new WrongUsageException(getCommandUsage(sender));
+        if (args.length > 1) TapeMouse.delay = parseIntWithMin(sender, args[1], 0);
         switch (args[0])
         {
             case "off":
@@ -50,16 +48,14 @@ public class CommandTapeMouse extends CommandBase
             case "left":
                 Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
                 TapeMouse.state = TapeMouse.State.LEFT;
-                sender.addChatMessage(new ChatComponentText("TapeMouse on: left"));
+                sender.addChatMessage(new ChatComponentText("TapeMouse on: left with delay: " + TapeMouse.delay));
                 break;
             case "right":
                 Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
                 TapeMouse.state = TapeMouse.State.RIGHT;
-                sender.addChatMessage(new ChatComponentText("TapeMouse on: right"));
+                sender.addChatMessage(new ChatComponentText("TapeMouse on: right with delay: " + TapeMouse.delay));
                 break;
         }
-
-        if (args.length > 1) TapeMouse.delay = parseIntWithMin(sender, args[1], 0);
     }
 
     @Override

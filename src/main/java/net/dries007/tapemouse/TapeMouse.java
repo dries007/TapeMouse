@@ -24,7 +24,14 @@ public class TapeMouse
 
     public enum State
     {
-        DISABLE, LEFT, RIGHT
+        DISABLE(null), LEFT(Minecraft.getMinecraft().gameSettings.keyBindAttack), RIGHT(Minecraft.getMinecraft().gameSettings.keyBindUseItem);
+
+        private final KeyBinding keyBinding;
+
+        State(KeyBinding keyBinding)
+        {
+            this.keyBinding = keyBinding;
+        }
     }
 
     @Mod.EventHandler
@@ -45,14 +52,9 @@ public class TapeMouse
         if (event.phase != TickEvent.Phase.START) return;
         if (i++ < delay) return;
         i = 0;
-        switch (state)
-        {
-            case LEFT:
-                KeyBinding.onTick(Minecraft.getMinecraft().gameSettings.keyBindAttack.getKeyCode());
-                break;
-            case RIGHT:
-                KeyBinding.onTick(Minecraft.getMinecraft().gameSettings.keyBindUseItem.getKeyCode());
-                break;
-        }
+        KeyBinding keyBinding = state.keyBinding;
+        if (keyBinding == null) return;
+        if (delay == 0) KeyBinding.setKeyBindState(keyBinding.getKeyCode(), true);
+        KeyBinding.onTick(keyBinding.getKeyCode());
     }
 }
