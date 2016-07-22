@@ -1,12 +1,20 @@
 package net.dries007.tapemouse;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.command.CommandBase;
+import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -14,14 +22,16 @@ import java.util.List;
  */
 public class CommandTapeMouse extends CommandBase
 {
+    private static final List<KeyBinding> KEYBIND_ARRAY = ReflectionHelper.getPrivateValue(KeyBinding.class, null, "KEYBIND_ARRAY", "field_74516_a");
+
     @Override
     public String getCommandName()
     {
-        return "tapemouse";
+        return TapeMouse.MODID.toLowerCase();
     }
 
     @Override
-    public boolean canCommandSenderUseCommand(ICommandSender sender)
+    public boolean checkPermission(MinecraftServer server, ICommandSender sender)
     {
         return sender instanceof EntityPlayer;
     }
@@ -29,38 +39,77 @@ public class CommandTapeMouse extends CommandBase
     @Override
     public String getCommandUsage(ICommandSender sender)
     {
-        return "/tapemouse <left|right|off> [delay]";
+        return '/' + getCommandName() + " [off|keybinding name] [delay] => Use no arguments to get a list of keybindings.";
     }
 
     @Override
-    public void processCommand(ICommandSender sender, String[] args)
+    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
     {
-        if (args.length == 0) throw new WrongUsageException(getCommandUsage(sender));
-        if (args.length > 1) TapeMouse.delay = parseIntWithMin(sender, args[1], 0);
-        switch (args[0])
+        if (args.length == 0)
         {
-            case "off":
-                Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = true;
-                TapeMouse.state = TapeMouse.State.DISABLE;
-                TapeMouse.i = 0;
-                sender.addChatMessage(new ChatComponentText("TapeMouse off."));
-                break;
-            case "left":
-                Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
-                TapeMouse.state = TapeMouse.State.LEFT;
-                sender.addChatMessage(new ChatComponentText("TapeMouse on: left with delay: " + TapeMouse.delay));
-                break;
-            case "right":
-                Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
-                TapeMouse.state = TapeMouse.State.RIGHT;
-                sender.addChatMessage(new ChatComponentText("TapeMouse on: right with delay: " + TapeMouse.delay));
-                break;
+            sender.addChatMessage(new TextComponentString("List of keybindings").setStyle(new Style().setColor(TextFormatting.AQUA)));
+            sender.addChatMessage(new TextComponentString("Key => NAME (category)").setStyle(new Style().setColor(TextFormatting.AQUA)));
+            for (KeyBinding keyBinding : KEYBIND_ARRAY)
+            {
+                if (keyBinding == null) continue;
+                String name = keyBinding.getKeyDescription();
+                if (name == null) continue;
+                name = name.replaceFirst("^key\\.", "");
+
+                String cat = keyBinding.getKeyCategory();
+                if (cat == null) continue;
+                cat = cat.replaceFirst("^key\\.", "");
+                cat = cat.replaceFirst("^categories\\.", "");
+
+                sender.addChatMessage(new TextComponentString(keyBinding.getDisplayName() + " => " + name + " (" + cat + ")"));
+            }
+            return;
+        }
+        if (args.length > 1) TapeMouse.delay = parseInt(args[1], 0);
+        if (args[0].equalsIgnoreCase("off"))
+        {
+            Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = true;
+            TapeMouse.keyBinding = null;
+            TapeMouse.i = 0;
+            sender.addChatMessage(new TextComponentString("TapeMouse off."));
+        }
+        else
+        {
+            for (KeyBinding keyBinding : KEYBIND_ARRAY)
+            {
+                if (keyBinding == null) continue;
+                String name = keyBinding.getKeyDescription();
+                if (name == null) continue;
+                name = name.replaceFirst("^key\\.", "");
+                if (args[0].equalsIgnoreCase(name))
+                {
+                    Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
+                    TapeMouse.keyBinding = keyBinding;
+                    sender.addChatMessage(new TextComponentString("TapeMouse on '" + keyBinding.getDisplayName() + "' with delay " + TapeMouse.delay + " ticks."));
+                    return;
+                }
+            }
+            throw new CommandException("Unknown keybinding.");
         }
     }
 
     @Override
-    public List addTabCompletionOptions(ICommandSender sender, String[] ars)
+    public List<String> getTabCompletionOptions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos pos)
     {
-        return getListOfStringsMatchingLastWord(ars, "off", "left", "right");
+        if (args.length == 1)
+        {
+            List<String> list = new ArrayList<>();
+            list.add("off");
+            for (KeyBinding keyBinding : KEYBIND_ARRAY)
+            {
+                if (keyBinding == null) continue;
+                String name = keyBinding.getKeyDescription();
+                if (name == null) continue;
+                name = name.replaceFirst("^key\\.", "");
+                list.add(name);
+            }
+            return getListOfStringsMatchingLastWord(args, list);
+        }
+        return super.getTabCompletionOptions(server, sender, args, pos);
     }
 }

@@ -1,59 +1,61 @@
 package net.dries007.tapemouse;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 /**
  * Main mod file
  *
  * @author Dries007
  */
-@Mod(modid = TapeMouse.MODID, name = TapeMouse.MODID, dependencies = "before:*", useMetadata = false)
+@SuppressWarnings("DefaultAnnotationParam")
+@Mod(modid = TapeMouse.MODID, name = TapeMouse.MODID, dependencies = "before:*", useMetadata = false, clientSideOnly = true)
 public class TapeMouse
 {
     public static final String MODID = "TapeMouse";
-    public static State state = State.DISABLE;
-    public static int delay = 10;
-
-    public enum State
-    {
-        DISABLE(null), LEFT(Minecraft.getMinecraft().gameSettings.keyBindAttack), RIGHT(Minecraft.getMinecraft().gameSettings.keyBindUseItem);
-
-        private final KeyBinding keyBinding;
-
-        State(KeyBinding keyBinding)
-        {
-            this.keyBinding = keyBinding;
-        }
-    }
+    static int delay = 10;
+    static KeyBinding keyBinding;
+    static int i = 0;
 
     @Mod.EventHandler
     public void init(FMLPreInitializationEvent event)
     {
-        FMLCommonHandler.instance().bus().register(this);
-        if (event.getSide().isClient())
-        {
-            ClientCommandHandler.instance.registerCommand(new CommandTapeMouse());
-        }
+        MinecraftForge.EVENT_BUS.register(this);
+        if (event.getSide().isClient()) ClientCommandHandler.instance.registerCommand(new CommandTapeMouse());
     }
 
-    static int i = 0;
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void textRenderEvent(RenderGameOverlayEvent.Text event)
+    {
+        if (keyBinding == null) return;
+        if (Minecraft.getMinecraft().currentScreen instanceof GuiChat)
+        {
+            event.getLeft().add(MODID + " paused. Chat GUI open.");
+        }
+        else
+        {
+            event.getLeft().add(MODID + " active: " + keyBinding.getDisplayName() + " (" + keyBinding.getKeyDescription().replaceFirst("^key\\.", "") + ')');
+            event.getLeft().add("Delay: " + i + " / " + delay);
+        }
+    }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void tickEvent(TickEvent.ClientTickEvent event)
     {
         if (event.phase != TickEvent.Phase.START) return;
+        if (Minecraft.getMinecraft().currentScreen instanceof GuiChat) return;
+        if (keyBinding == null) return;
         if (i++ < delay) return;
         i = 0;
-        KeyBinding keyBinding = state.keyBinding;
-        if (keyBinding == null) return;
         if (delay == 0) KeyBinding.setKeyBindState(keyBinding.getKeyCode(), true);
         KeyBinding.onTick(keyBinding.getKeyCode());
     }

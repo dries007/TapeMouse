@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
         maven {
             name = "forge"
             url = "http://files.minecraftforge.net/maven"
@@ -11,7 +11,8 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+        classpath group: 'com.github.rodionmoiseev.gradle.plugins', name: 'idea-utils', version: '0.2'
     }
 }
 
@@ -22,70 +23,89 @@ configurations {
     deployJars
 }
 
-apply plugin: "forge"
+apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: "idea-utils"
 apply plugin: "maven"
 
 group = "net.dries007.tapemouse"
 version = "1.1.0"
+def githuborg = 'dries007'
 
 targetCompatibility = 1.7
 sourceCompatibility = 1.7
 
 archivesBaseName = 'TapeMouse'
 minecraft {
-    version = "1.7.10-10.13.4.1614-1.7.10"
+    version = "1.9.4-12.17.0.1976"
     runDir = "jars"
+    mappings = "stable_26"
 }
-
 if (System.getenv().BUILD_NUMBER != null) version += "." + System.getenv().BUILD_NUMBER
-def builder = new groovy.json.JsonBuilder()
-builder (version: version, mcversion: project.minecraft.version, apiversion: project.minecraft.apiVersion)
-new File("versions.json").write(builder.toPrettyString())
 
+//noinspection GroovyAssignabilityCheck
 processResources {
     from(sourceSets.main.resources.srcDirs) {
-        include '**/*.info'
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+        include 'mcmod.info'
+        expand 'version':project.version, 'mcversion':project.minecraft.version, 'modid':project.archivesBaseName, 'githuborg':githuborg, 'description':description, 'group':project.group, 'artifactId':project.archivesBaseName
     }
 
-    from(sourceSets.main.resources.srcDirs) {
-        exclude '**/*.info'
+    doLast {
+        def updateFile = new File(project.archivesBaseName + '.json')
+        def json;
+        if (updateFile.exists()) {
+            json = new JsonSlurper().parseText(updateFile.getText())
+        }
+        else {
+            def builder = new JsonBuilder()
+            json = builder(
+                    homepage: "http://doubledoordev.net/",
+                    promos: new HashMap<>()
+            )
+        }
+        def outStream = new ByteArrayOutputStream()
+        def result = exec {
+            executable = 'git'
+            args = [ 'log', '-n', '1', "--format='%B'"]
+            standardOutput = outStream
+        }
+        def fullLog = outStream.toString().replaceAll("^\\s*'\\s*|\\s*'\\s*\$", "").replaceAll("[\\r\\n]+", "\n")
+
+        json['promos'][project.minecraft.version + '-latest'] = project.version
+        json['promos'][project.minecraft.version + '-recomended'] = project.version
+        if (!json.containsKey(project.minecraft.version)) json.put(project.minecraft.version, new HashMap<>())
+        def version = json[project.minecraft.version]
+        version.put(project.version, fullLog)
+        updateFile.write JsonOutput.prettyPrint(JsonOutput.toJson(json))
     }
 }
 
-task sourcesJar(type: Jar) {
-    from "LICENSE.txt"
-    from sourceSets.main.allSource
-    classifier = 'src'
-    appendix = project.minecraft.version
-    manifest {
-        attributes 'ModSide': 'CLIENT'
-    }
-}
-
-task deobfJar(type: Jar) {
-    from "LICENSE.txt"
+task deobfJar(type: Jar, dependsOn: 'jar') {
     from sourceSets.main.output
-    from (sourceSets.main.allSource.srcDirs) {
-        include '**/*.java'
-    }
-	classifier = 'dev'
+    from "LICENSE.txt"
+    classifier "dev"
     appendix = project.minecraft.version
-    manifest {
-        attributes 'ModSide': 'CLIENT'
-    }
 }
-
+sourceJar {
+    from "LICENSE.txt"
+    exclude("com/**")
+    classifier "src"
+    appendix = project.minecraft.version
+}
+//noinspection GroovyAssignabilityCheck
 jar {
     from "LICENSE.txt"
+    exclude("com/**")
     appendix = project.minecraft.version
-    manifest {
-        attributes 'ModSide': 'CLIENT'
-    }
+}
+artifacts {
+    archives deobfJar
 }
 
-artifacts {
-	archives jar
-    archives sourcesJar
-    archives deobfJar
+idea {
+    project {
+        copyright {
+            name = 'New BSD License'
+            license = file('LICENSE.txt')
+        }
+    }
 }
