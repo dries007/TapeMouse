@@ -17,6 +17,8 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.lwjgl.input.Keyboard.KEY_NONE;
+
 /**
  * @author Dries007
  */
@@ -51,7 +53,7 @@ public class CommandTapeMouse extends CommandBase
             sender.addChatMessage(new TextComponentString("Key => NAME (category)").setStyle(new Style().setColor(TextFormatting.AQUA)));
             for (KeyBinding keyBinding : KEYBIND_ARRAY)
             {
-                if (keyBinding == null) continue;
+                if (keyBinding == null || keyBinding.getKeyCode() == KEY_NONE) continue;
                 String name = keyBinding.getKeyDescription();
                 if (name == null) continue;
                 name = name.replaceFirst("^key\\.", "");
@@ -102,7 +104,7 @@ public class CommandTapeMouse extends CommandBase
             list.add("off");
             for (KeyBinding keyBinding : KEYBIND_ARRAY)
             {
-                if (keyBinding == null) continue;
+                if (keyBinding == null || keyBinding.getKeyCode() == KEY_NONE) continue;
                 String name = keyBinding.getKeyDescription();
                 if (name == null) continue;
                 name = name.replaceFirst("^key\\.", "");
