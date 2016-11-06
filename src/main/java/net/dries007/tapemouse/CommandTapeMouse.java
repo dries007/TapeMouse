@@ -5,6 +5,7 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
+import net.minecraft.command.NumberInvalidException;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
@@ -25,6 +26,7 @@ import static org.lwjgl.input.Keyboard.KEY_NONE;
 public class CommandTapeMouse extends CommandBase
 {
     private static final List<KeyBinding> KEYBIND_ARRAY = ReflectionHelper.getPrivateValue(KeyBinding.class, null, "KEYBIND_ARRAY", "field_74516_a");
+    private boolean prevPauseSetting = true; // defaults to true
 
     @Override
     public String getCommandName()
@@ -41,7 +43,7 @@ public class CommandTapeMouse extends CommandBase
     @Override
     public String getCommandUsage(ICommandSender sender)
     {
-        return '/' + getCommandName() + " [off|keybinding name] [delay] => Use no arguments to get a list of keybindings.";
+        return '/' + getCommandName() + " [off|keybinding name ...] [delay] => Use no arguments to get a list of keybindings.";
     }
 
     @Override
@@ -67,31 +69,47 @@ public class CommandTapeMouse extends CommandBase
             }
             return;
         }
-        if (args.length > 1) TapeMouse.delay = parseInt(args[1], 0);
         if (args[0].equalsIgnoreCase("off"))
         {
-            Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = true;
+            Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = prevPauseSetting;
             TapeMouse.keyBinding = null;
             TapeMouse.i = 0;
             sender.addChatMessage(new TextComponentString("TapeMouse off."));
         }
         else
         {
+            String askedName = args[0];
+            if (args.length > 1)
+            {
+                try
+                {
+                    TapeMouse.delay = parseInt(args[args.length - 1], 0);
+                    for (int i = 1; i < args.length - 1; i++) askedName += ' ' + args[i];
+                }
+                catch (NumberInvalidException e)
+                {
+                    // Assume last part was not a number
+                    for (int i = 1; i < args.length; i++) askedName += ' ' + args[i];
+                }
+                askedName = askedName.trim();
+            }
             for (KeyBinding keyBinding : KEYBIND_ARRAY)
             {
                 if (keyBinding == null) continue;
                 String name = keyBinding.getKeyDescription();
                 if (name == null) continue;
                 name = name.replaceFirst("^key\\.", "");
-                if (args[0].equalsIgnoreCase(name))
+                if (askedName.equalsIgnoreCase(name))
                 {
+                    prevPauseSetting = Minecraft.getMinecraft().gameSettings.pauseOnLostFocus;
                     Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
                     TapeMouse.keyBinding = keyBinding;
                     sender.addChatMessage(new TextComponentString("TapeMouse on '" + keyBinding.getDisplayName() + "' with delay " + TapeMouse.delay + " ticks."));
                     return;
                 }
             }
-            throw new CommandException("Unknown keybinding.");
+
+            throw new CommandException(askedName + " is unknown keybinding. If your keybind ends in a number, you *have* to specify the delay.");
         }
     }
 
