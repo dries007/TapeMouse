@@ -36,9 +36,9 @@ sourceCompatibility = 1.7
 
 archivesBaseName = 'TapeMouse'
 minecraft {
-    version = "1.9.4-12.17.0.1976"
+    version = "1.11-13.19.1.2189"
     runDir = "jars"
-    mappings = "stable_26"
+    mappings = "snapshot_20161111"
 }
 if (System.getenv().BUILD_NUMBER != null) version += "." + System.getenv().BUILD_NUMBER
 

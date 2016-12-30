@@ -13,6 +13,8 @@ import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import static org.lwjgl.input.Keyboard.KEY_NONE;
 /**
  * @author Dries007
  */
+@SideOnly(Side.CLIENT)
 public class CommandTapeMouse extends CommandBase
 {
     private static final List<KeyBinding> KEYBIND_ARRAY = ReflectionHelper.getPrivateValue(KeyBinding.class, null, "KEYBIND_ARRAY", "field_74516_a");

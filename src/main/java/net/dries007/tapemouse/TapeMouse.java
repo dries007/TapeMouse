@@ -11,17 +11,20 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Main mod file
  *
  * @author Dries007
  */
-@SuppressWarnings("DefaultAnnotationParam")
-@Mod(modid = TapeMouse.MODID, name = TapeMouse.MODID, dependencies = "before:*", useMetadata = false, clientSideOnly = true)
+@SuppressWarnings({"NewExpressionSideOnly", "MethodCallSideOnly"}) // clientSideOnly does about the same thing...
+@Mod(modid = TapeMouse.MODID, name = TapeMouse.NAME, dependencies = "before:*", useMetadata = false, clientSideOnly = true)
 public class TapeMouse
 {
-    public static final String MODID = "TapeMouse";
+    public static final String MODID = "tapemouse";
+    public static final String NAME = "TapeMouse";
     static int delay = 10;
     static KeyBinding keyBinding;
     static int i = 0;

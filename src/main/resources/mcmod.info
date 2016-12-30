@@ -1,6 +1,6 @@
 [
 {
-  "modid": "TapeMouse",
+  "modid": "tapemouse",
   "name": "TapeMouse",
   "description": "Tape + Mouse = TapeMouse",
   "version": "${version}",
