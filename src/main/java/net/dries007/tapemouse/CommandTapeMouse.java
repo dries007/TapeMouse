@@ -19,6 +19,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.lwjgl.input.Keyboard.KEY_NONE;
 
@@ -28,11 +29,11 @@ import static org.lwjgl.input.Keyboard.KEY_NONE;
 @SideOnly(Side.CLIENT)
 public class CommandTapeMouse extends CommandBase
 {
-    private static final List<KeyBinding> KEYBIND_ARRAY = ReflectionHelper.getPrivateValue(KeyBinding.class, null, "KEYBIND_ARRAY", "field_74516_a");
+    private static final Map<String, KeyBinding> KEYBIND_ARRAY = ReflectionHelper.getPrivateValue(KeyBinding.class, null, "KEYBIND_ARRAY", "field_74516_a");
     private boolean prevPauseSetting = true; // defaults to true
 
     @Override
-    public String getCommandName()
+    public String getName()
     {
         return TapeMouse.MODID.toLowerCase();
     }
@@ -44,9 +45,9 @@ public class CommandTapeMouse extends CommandBase
     }
 
     @Override
-    public String getCommandUsage(ICommandSender sender)
+    public String getUsage(ICommandSender sender)
     {
-        return '/' + getCommandName() + " [off|keybinding name ...] [delay] => Use no arguments to get a list of keybindings.";
+        return '/' + getName() + " [off|keybinding name ...] [delay] OR Use no arguments to get a list of keybindings.";
     }
 
     @Override
@@ -54,9 +55,10 @@ public class CommandTapeMouse extends CommandBase
     {
         if (args.length == 0)
         {
-            sender.addChatMessage(new TextComponentString("List of keybindings").setStyle(new Style().setColor(TextFormatting.AQUA)));
-            sender.addChatMessage(new TextComponentString("Key => NAME (category)").setStyle(new Style().setColor(TextFormatting.AQUA)));
-            for (KeyBinding keyBinding : KEYBIND_ARRAY)
+            sender.sendMessage(new TextComponentString("List of keybindings").setStyle(new Style().setColor(TextFormatting.AQUA)));
+            sender.sendMessage(new TextComponentString("Key => NAME (category)").setStyle(new Style().setColor(TextFormatting.AQUA)));
+
+            for (KeyBinding keyBinding : KEYBIND_ARRAY.values())
             {
                 if (keyBinding == null || keyBinding.getKeyCode() == KEY_NONE) continue;
                 String name = keyBinding.getKeyDescription();
@@ -68,7 +70,7 @@ public class CommandTapeMouse extends CommandBase
                 cat = cat.replaceFirst("^key\\.", "");
                 cat = cat.replaceFirst("^categories\\.", "");
 
-                sender.addChatMessage(new TextComponentString(keyBinding.getDisplayName() + " => " + name + " (" + cat + ")"));
+                sender.sendMessage(new TextComponentString(keyBinding.getDisplayName() + " => " + name + " (" + cat + ")"));
             }
             return;
         }
@@ -77,37 +79,38 @@ public class CommandTapeMouse extends CommandBase
             Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = prevPauseSetting;
             TapeMouse.keyBinding = null;
             TapeMouse.i = 0;
-            sender.addChatMessage(new TextComponentString("TapeMouse off."));
+            sender.sendMessage(new TextComponentString("TapeMouse off."));
         }
         else
         {
-            String askedName = args[0];
+            StringBuilder askedName = new StringBuilder(args[0]);
             if (args.length > 1)
             {
                 try
                 {
                     TapeMouse.delay = parseInt(args[args.length - 1], 0);
-                    for (int i = 1; i < args.length - 1; i++) askedName += ' ' + args[i];
+                    for (int i = 1; i < args.length - 1; i++) askedName.append(' ').append(args[i]);
                 }
                 catch (NumberInvalidException e)
                 {
                     // Assume last part was not a number
-                    for (int i = 1; i < args.length; i++) askedName += ' ' + args[i];
+                    for (int i = 1; i < args.length; i++) askedName.append(' ').append(args[i]);
                 }
-                askedName = askedName.trim();
+                askedName = new StringBuilder(askedName.toString().trim());
             }
-            for (KeyBinding keyBinding : KEYBIND_ARRAY)
+            for (KeyBinding keyBinding : KEYBIND_ARRAY.values())
             {
                 if (keyBinding == null) continue;
                 String name = keyBinding.getKeyDescription();
+                //noinspection ConstantConditions Because of stupid mod authors...
                 if (name == null) continue;
                 name = name.replaceFirst("^key\\.", "");
-                if (askedName.equalsIgnoreCase(name))
+                if (askedName.toString().equalsIgnoreCase(name))
                 {
                     prevPauseSetting = Minecraft.getMinecraft().gameSettings.pauseOnLostFocus;
                     Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
                     TapeMouse.keyBinding = keyBinding;
-                    sender.addChatMessage(new TextComponentString("TapeMouse on '" + keyBinding.getDisplayName() + "' with delay " + TapeMouse.delay + " ticks."));
+                    sender.sendMessage(new TextComponentString("TapeMouse on '" + name + "' (" + keyBinding.getDisplayName() + ") with delay " + TapeMouse.delay + " ticks."));
                     return;
                 }
             }
@@ -117,22 +120,23 @@ public class CommandTapeMouse extends CommandBase
     }
 
     @Override
-    public List<String> getTabCompletionOptions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos pos)
+    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos pos)
     {
         if (args.length == 1)
         {
             List<String> list = new ArrayList<>();
             list.add("off");
-            for (KeyBinding keyBinding : KEYBIND_ARRAY)
+            for (KeyBinding keyBinding : KEYBIND_ARRAY.values())
             {
                 if (keyBinding == null || keyBinding.getKeyCode() == KEY_NONE) continue;
                 String name = keyBinding.getKeyDescription();
+                //noinspection ConstantConditions Because of stupid mod authors...
                 if (name == null) continue;
                 name = name.replaceFirst("^key\\.", "");
                 list.add(name);
             }
             return getListOfStringsMatchingLastWord(args, list);
         }
-        return super.getTabCompletionOptions(server, sender, args, pos);
+        return super.getTabCompletions(server, sender, args, pos);
     }
 }

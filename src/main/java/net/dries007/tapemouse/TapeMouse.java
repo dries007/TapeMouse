@@ -2,6 +2,7 @@ package net.dries007.tapemouse;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
+import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -11,15 +12,13 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Main mod file
  *
  * @author Dries007
  */
-@SuppressWarnings({"NewExpressionSideOnly", "MethodCallSideOnly"}) // clientSideOnly does about the same thing...
+@SuppressWarnings({"NewExpressionSideOnly", "MethodCallSideOnly"}) // @Mod.clientSideOnly does this.
 @Mod(modid = TapeMouse.MODID, name = TapeMouse.NAME, dependencies = "before:*", useMetadata = false, clientSideOnly = true)
 public class TapeMouse
 {
@@ -40,13 +39,17 @@ public class TapeMouse
     public void textRenderEvent(RenderGameOverlayEvent.Text event)
     {
         if (keyBinding == null) return;
-        if (Minecraft.getMinecraft().currentScreen instanceof GuiChat)
+        if (Minecraft.getMinecraft().currentScreen instanceof GuiMainMenu)
         {
-            event.getLeft().add(MODID + " paused. Chat GUI open.");
+            event.getLeft().add(NAME + " paused. Main menu open. If you want to AFK, use ALT+TAB.");
+        }
+        else if (Minecraft.getMinecraft().currentScreen instanceof GuiChat)
+        {
+            event.getLeft().add(NAME + " paused. Chat GUI open. If you want to AFK, use ALT+TAB.");
         }
         else
         {
-            event.getLeft().add(MODID + " active: " + keyBinding.getDisplayName() + " (" + keyBinding.getKeyDescription().replaceFirst("^key\\.", "") + ')');
+            event.getLeft().add(NAME + " active: " + keyBinding.getDisplayName() + " (" + keyBinding.getKeyDescription().replaceFirst("^key\\.", "") + ')');
             event.getLeft().add("Delay: " + i + " / " + delay);
         }
     }
@@ -55,6 +58,7 @@ public class TapeMouse
     public void tickEvent(TickEvent.ClientTickEvent event)
     {
         if (event.phase != TickEvent.Phase.START) return;
+        if (Minecraft.getMinecraft().currentScreen instanceof GuiMainMenu) return;
         if (Minecraft.getMinecraft().currentScreen instanceof GuiChat) return;
         if (keyBinding == null) return;
         if (i++ < delay) return;

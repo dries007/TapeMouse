@@ -1,7 +1,7 @@
 .gradle
 build
-jars
-out
+run
+classes
 *.iml
 *.ipr
 *.iws
