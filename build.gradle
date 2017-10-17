@@ -38,9 +38,9 @@ compileJava {
 
 archivesBaseName = 'TapeMouse'
 minecraft {
-    version = "1.12-14.21.1.2426"
+    version = "1.12.2-14.23.0.2491"
     runDir = "run"
-    mappings = "snapshot_20170624"
+    mappings = "snapshot_20171017"
 }
 if (System.getenv().BUILD_NUMBER != null) version += "." + System.getenv().BUILD_NUMBER
 
