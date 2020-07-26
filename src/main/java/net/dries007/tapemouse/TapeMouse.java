@@ -18,7 +18,6 @@ import net.minecraftforge.fml.network.FMLNetworkConstants;
 @Mod("tapemouse")
 public class TapeMouse
 {
-    // Directly reference a log4j logger.
     public static final Logger LOGGER = LogManager.getLogger();
 
     public TapeMouse()
@@ -29,14 +28,4 @@ public class TapeMouse
         // Register client event handler only if we're on the client.
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> ClientEventHandler::new);
     }
-
-//    @Mod.EventBusSubscriber
-//
-//    @Mod.EventHandler
-//    public void init(FMLClientSetupEvent event)
-//    {
-//        MinecraftForge.EVENT_BUS.register(this);
-//        if (event.getSide().isClient()) ClientCommandHandler.instance.registerCommand(new CommandTapeMouse());
-//    }
-
 }
