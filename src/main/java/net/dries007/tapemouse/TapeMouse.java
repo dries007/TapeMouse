@@ -1,69 +1,42 @@
 package net.dries007.tapemouse;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiChat;
-import net.minecraft.client.gui.GuiMainMenu;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraftforge.client.ClientCommandHandler;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.common.MinecraftForge;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ExtensionPoint;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.network.FMLNetworkConstants;
 
 /**
  * Main mod file
- *
  * @author Dries007
  */
-@SuppressWarnings({"NewExpressionSideOnly", "MethodCallSideOnly"}) // @Mod.clientSideOnly does this.
-@Mod(modid = TapeMouse.MODID, name = TapeMouse.NAME, dependencies = "before:*", useMetadata = false, clientSideOnly = true)
+@Mod("tapemouse")
 public class TapeMouse
 {
-    public static final String MODID = "tapemouse";
-    public static final String NAME = "TapeMouse";
-    static int delay = 10;
-    static KeyBinding keyBinding;
-    static int i = 0;
+    // Directly reference a log4j logger.
+    public static final Logger LOGGER = LogManager.getLogger();
 
-    @Mod.EventHandler
-    public void init(FMLPreInitializationEvent event)
+    public TapeMouse()
     {
-        MinecraftForge.EVENT_BUS.register(this);
-        if (event.getSide().isClient()) ClientCommandHandler.instance.registerCommand(new CommandTapeMouse());
+        // Why oh why. Why can this not be a thing in the toml or @Mod like it used to be...
+        //Make sure the mod being absent on the other network side does not cause the client to display the server as incompatible
+        ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST, () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
+        // Register client event handler only if we're on the client.
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> ClientEventHandler::new);
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void textRenderEvent(RenderGameOverlayEvent.Text event)
-    {
-        if (keyBinding == null) return;
-        if (Minecraft.getMinecraft().currentScreen instanceof GuiMainMenu)
-        {
-            event.getLeft().add(NAME + " paused. Main menu open. If you want to AFK, use ALT+TAB.");
-        }
-        else if (Minecraft.getMinecraft().currentScreen instanceof GuiChat)
-        {
-            event.getLeft().add(NAME + " paused. Chat GUI open. If you want to AFK, use ALT+TAB.");
-        }
-        else
-        {
-            event.getLeft().add(NAME + " active: " + keyBinding.getDisplayName() + " (" + keyBinding.getKeyDescription().replaceFirst("^key\\.", "") + ')');
-            event.getLeft().add("Delay: " + i + " / " + delay);
-        }
-    }
+//    @Mod.EventBusSubscriber
+//
+//    @Mod.EventHandler
+//    public void init(FMLClientSetupEvent event)
+//    {
+//        MinecraftForge.EVENT_BUS.register(this);
+//        if (event.getSide().isClient()) ClientCommandHandler.instance.registerCommand(new CommandTapeMouse());
+//    }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void tickEvent(TickEvent.ClientTickEvent event)
-    {
-        if (event.phase != TickEvent.Phase.START) return;
-        if (Minecraft.getMinecraft().currentScreen instanceof GuiMainMenu) return;
-        if (Minecraft.getMinecraft().currentScreen instanceof GuiChat) return;
-        if (keyBinding == null) return;
-        if (i++ < delay) return;
-        i = 0;
-        if (delay == 0) KeyBinding.setKeyBindState(keyBinding.getKeyCode(), true);
-        KeyBinding.onTick(keyBinding.getKeyCode());
-    }
 }

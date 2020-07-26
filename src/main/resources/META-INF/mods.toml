@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[31,)"
+issueTrackerURL="https://github.com/dries007/TapeMouse/issues"
+[[mods]]
+modId="tapemouse"
+version="${file.jarVersion}"
+displayName="TapeMouse"
+updateJSONURL="https://mc.dries007.net/TapeMouse.json"
+displayURL="https://github.com/dries007/TapeMouse"
+logoFile="logo.png"
+credits=""
+authors="Dries007"
+description='''
+Tape + Mouse = TapeMouse
+'''
+[[dependencies.tapemouse]]
+    modId="forge"
+    mandatory=true
+    versionRange="[31,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.tapemouse]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.15.2]"
+    ordering="NONE"
+    side="BOTH"

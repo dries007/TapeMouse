@@ -1,113 +1,91 @@
 buildscript {
     repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
         jcenter()
-        maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
-        }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
+        mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-        classpath group: 'com.github.rodionmoiseev.gradle.plugins', name: 'idea-utils', version: '0.2'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
 
-import groovy.json.*
-
-configurations {
-    compile
-    deployJars
-}
-
-apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: "idea-utils"
-apply plugin: "maven"
-
-group = "net.dries007.tapemouse"
-version = "1.1.3"
-def githuborg = 'dries007'
-
-sourceCompatibility = targetCompatibility = '1.8'
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
-
+version = '1.2'
+group = 'net.dries007.tapemouse'
 archivesBaseName = 'TapeMouse'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
 minecraft {
-    version = "1.12.2-14.23.0.2491"
-    runDir = "run"
-    mappings = "snapshot_20171017"
-}
-if (System.getenv().BUILD_NUMBER != null) version += "." + System.getenv().BUILD_NUMBER
+    mappings channel: 'snapshot', version: '20200514-1.15.1'
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
-//noinspection GroovyAssignabilityCheck
-processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-        expand 'version':project.version, 'mcversion':project.minecraft.version, 'modid':project.archivesBaseName.toLowerCase(), 'name':project.archivesBaseName, 'githuborg':githuborg, 'description':description, 'group':project.group, 'artifactId':project.archivesBaseName
-    }
-
-    doLast {
-        def updateFile = new File(project.archivesBaseName + '.json')
-        def json;
-        if (updateFile.exists()) {
-            json = new JsonSlurper().parseText(updateFile.getText())
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                tapemouse {
+                    source sourceSets.main
+                }
+            }
         }
-        else {
-            def builder = new JsonBuilder()
-            json = builder(
-                    homepage: "https://github.com/" + githuborg + "/" + archivesBaseName,
-                    promos: new HashMap<>()
-            )
+        server {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                tapemouse {
+                    source sourceSets.main
+                }
+            }
         }
-        def outStream = new ByteArrayOutputStream()
-        def result = exec {
-            executable = 'git'
-            args = [ 'log', '-n', '1', "--format='%B'"]
-            standardOutput = outStream
+        data {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            args '--mod', 'tapemouse', '--all', '--output', file('src/generated/resources/')
+            mods {
+                tapemouse {
+                    source sourceSets.main
+                }
+            }
         }
-        def fullLog = outStream.toString().replaceAll("^\\s*'\\s*|\\s*'\\s*\$", "").replaceAll("[\\r\\n]+", "\n")
-
-        json['promos'][project.minecraft.version + '-latest'] = project.version
-        json['promos'][project.minecraft.version + '-recomended'] = project.version
-        if (!json.containsKey(project.minecraft.version)) json.put(project.minecraft.version, new HashMap<>())
-        def version = json[project.minecraft.version]
-        version.put(project.version, fullLog)
-        updateFile.write JsonOutput.prettyPrint(JsonOutput.toJson(json))
     }
 }
 
-task deobfJar(type: Jar, dependsOn: 'jar') {
-    from sourceSets.main.output
-    from "LICENSE.txt"
-    classifier "dev"
-    appendix = project.minecraft.version
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.15.2-31.2.31'
 }
-sourceJar {
-    from "LICENSE.txt"
-    exclude("com/**")
-    classifier "src"
-    appendix = project.minecraft.version
-}
-//noinspection GroovyAssignabilityCheck
+
 jar {
-    from "LICENSE.txt"
-    exclude("com/**")
-    appendix = project.minecraft.version
-}
-artifacts {
-    archives deobfJar
+    manifest {
+        attributes([
+            "Specification-Title": "tapemouse",
+            "Specification-Vendor": "Dries007",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"Dries007",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
 }
 
-idea {
-    project {
-        copyright {
-            name = 'New BSD License'
-            license = file('LICENSE.txt')
+jar.finalizedBy('reobfJar')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/mcmodsrepo"
         }
     }
 }
